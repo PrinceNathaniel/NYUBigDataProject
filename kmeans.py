@@ -37,7 +37,7 @@ def creatlist(df):
             enlarge(df,colname)
 
 
-pdf=pd.read_csv('proj/data/GROUP9/5c5x-3qz9.tsv',sep='\t',header=0)
+pdf=pd.read_csv('data/5c5x-3qz9.tsv',sep='\t',header=0)
 creatlist(pdf)
 df = sqlContext.createDataFrame(pdf)
 rdd = df.rdd.map(list)
@@ -85,7 +85,7 @@ rdd_w_clusts = sdfilt.map(lambda x: addclustercols(x))
 rdd_w_clusts.first()
 
 
-data = sc.textFile('5c5x-3qz9.tsv').map(lambda x: x.split('\t'))
+data = sc.textFile('data/5c5x-3qz9.tsv').map(lambda x: x.split('\t'))
 header = tuple(pdf.columns)
 header = tuple(header) + ('dist',)
 
