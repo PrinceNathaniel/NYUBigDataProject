@@ -20,7 +20,7 @@ len_column = len(collect_data)
 len_row = len(collect_data[0])
 
 def NullFilter(l):
-    return l != '' and l != '""';
+    return l != '' and l != '""'
 
 def filtered(l):
     filtered_ = sc.parallelize(l).filter(Nullfilter).collect()
