@@ -24,7 +24,7 @@ def NullFilter(l):
 
 def filtered(l):
     filtered_ = sc.parallelize(l).filter(Nullfilter).collect()
-    return len(filtered)
+    return len(filtered_)
 
 def filteredRDD(l):
     for i in range(len(l)):
