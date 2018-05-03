@@ -35,16 +35,29 @@ def dofloat(entry):
 
 df = spark.createDataFrame(data, header)
 #one-hot encoding
+m = df.count()
 for i in range(len(header)):
-  categories = df.select(header[i]).distinct().rdd.flatMap(lambda x : x).collect()
+  k = df.filter((df[header[i]] == "") | df[header[i]].isNull() | isnan(df[header[i]])).count()
+  null_percent = float(k)/m
+  if null_percent > 0.1:
+    df = df.drop(header[i])
+    continue
+  
+  categories = df.select(header[i]).sample(withReplacement=False, fraction=0.1).distinct().replace('', '0').rdd.flatMap(lambda x : x).collect()
   tem = dofloat(categories)
   if len(tem) == 0:
     continue
+  if len(tem) >10:
+    df = df.drop(header[i])
+    continue
+  categories = df.select(header[i]).distinct().rdd.flatMap(lambda x : x).collect()
   for category in categories:
       function = udf(lambda item: 1 if item == category else 0, StringType())
       new_column_name = header[i]+'_'+category
       df = df.withColumn(new_column_name, function(col(header[i])))
   df = df.drop(header[i])
+
+df = df.replace('', '0')
 
 lines = df.rdd.map(list)
 n_rows=len(lines.collect())
