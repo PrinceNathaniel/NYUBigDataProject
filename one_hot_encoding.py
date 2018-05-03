@@ -24,24 +24,18 @@ def isfloat(value):
     return True
   except ValueError:
     return False
-def dofloat(entry):
-  k = []
-  for i in range(len(entry)):
-    if isfloat(entry[i]) != True:
-      k.append(i)
-  return k
 
-
-tem = data.first()
-strofdata = dofloat(tem)
 
 df = spark.createDataFrame(data, header)
 
-for i in strofdata:
+for i in range(len(header)):
   categories = df.select(header[i]).distinct().rdd.flatMap(lambda x : x).collect()
-  categories.sort()
+  tem = dofloat(categories)
+  if len(tem) == 0:
+    continue
   for category in categories:
-      function = udf(lambda item: 1 if item == category else 0, IntegerType())
+      function = udf(lambda item: 1 if item == category else 0, StringType())
       new_column_name = header[i]+'_'+category
       df = df.withColumn(new_column_name, function(col(header[i])))
   df = df.drop(header[i])
+df.show()
