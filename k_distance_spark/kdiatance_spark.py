@@ -25,6 +25,13 @@ def isfloat(value):
   except ValueError:
     return False
 
+def dofloat(entry):
+  k = []
+  for i in range(len(entry)):
+    if isfloat(entry[i]) != True:
+      k.append(i)
+  return k
+
 
 df = spark.createDataFrame(data, header)
 #one-hot encoding
