@@ -58,35 +58,43 @@ for i in range(len(header)):
   df = df.drop(header[i])
 
 df = df.replace('', '0')
+lines = df.rdd.map(list).zipWithIndex()
+lines = lines.map(lambda (key, index): (index,key))
 
-lines = df.rdd.map(list)
 n_rows=len(lines.collect())
 n_element=len(lines.first())
 
-lines=lines.cartesian(lines)
-
+lines=lines.cartesian(lines).sortByKey()
+lines.repartition(10)
 def distance(x):
-    dist=0
-    for i in range(n_element):
-        dist += (float(x[0][i])-float(x[1][i]))**2
-    return np.sqrt(dist)
+	dist=0
+	for i in range(n_element):
+		dist += (float(x[0][1][i])-float(x[1][1][i]))**2
+	return np.sqrt(dist)
 dist=lines.map(lambda x:distance(x))
 res = dist.collect()
 
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
-        yield l[i:i + n]
-res = sc.parallelize(list(chunks(res, n_rows)))
+      res = []
+      for j in range(0,n):
+        res.append((l[i+j],j))
+      yield res
+partition = sc.parallelize(list(chunks(res, n_rows)))
 
 def kdistance(entry,k):
-  entry.sort()
-  return entry[k]
-kdistanceres = res.map(lambda x:kdistance(x,200)).zipWithIndex().collect()
+  entry = sorted(entry, key=lambda x: x[0] ,reverse = False)
+  neighboures = []
+  for i in range(1, k+1):
+    neighboures.append(entry[i][1])
+  return (entry[k][0],neighboures)
+
+kdistanceres= partition.map(lambda x:kdistance(x,5)).zipWithIndex().collect()
 
 
 def n_outlier(entry,n):
-  entry = sorted(entry, key=lambda x: x[0] ,reverse = True)
+  entry = sorted(entry, key=lambda x: x[0][0] ,reverse = True)
   return entry[0:n]
 outlier = n_outlier(kdistanceres,10)
 outlier
