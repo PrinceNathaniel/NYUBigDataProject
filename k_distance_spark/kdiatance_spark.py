@@ -11,7 +11,7 @@ from pyspark.sql.types import BooleanType
 from pyspark.sql.functions import udf,col,when
 from pyspark.sql.types import IntegerType,StringType
 
-
+sc = SparkContext()
 data = sc.textFile("/FileStore/tables/5c5x_3qz9-5a564.tsv")
 data = data.mapPartitions(lambda x: reader(x, delimiter='\t'))
 data.collect()
@@ -33,7 +33,7 @@ def dofloat(entry):
   return k
 
 
-df = spark.createDataFrame(data, header)
+df = sc.createDataFrame(data, header)
 #one-hot encoding
 m = df.count()
 for i in range(len(header)):
@@ -90,3 +90,10 @@ def n_outlier(entry,n):
   return entry[0:n]
 outlier = n_outlier(kdistanceres,10)
 outlier
+
+
+
+
+
+
+
