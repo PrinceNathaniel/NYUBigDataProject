@@ -29,7 +29,6 @@ def isfloat(value):
     return True
   except ValueError:
     return False
-
 def dofloat(entry):
   k = []
   for i in range(len(entry)):
@@ -39,7 +38,7 @@ def dofloat(entry):
 
 
 df = spark.createDataFrame(data, header)
-#one-hot encoding
+
 m = df.count()
 for i in range(len(header)):
   k = df.filter((df[header[i]] == "") | df[header[i]].isNull() | isnan(df[header[i]])).count()
@@ -62,9 +61,10 @@ for i in range(len(header)):
       df = df.withColumn(new_column_name, function(col(header[i])))
   df = df.drop(header[i])
 
+
+
 df = df.replace('', '0')
 lines = df.rdd.map(list).zipWithIndex()
-
 lines = lines.map(lambda x: (x[1],x[0]))
 
 n_rows=len(lines.collect())
@@ -89,25 +89,55 @@ def chunks(l, n):
       yield res
 partition = sc.parallelize(list(chunks(res, n_rows)))
 
+k = 20
 def kdistance(entry,k):
   entry = sorted(entry, key=lambda x: x[0] ,reverse = False)
   neighboures = []
+  neighboures_distance = []
   for i in range(1, k+1):
     neighboures.append(entry[i][1])
-  return (entry[k][0],neighboures)
+    neighboures_distance.append(entry[i][0])
+  return [entry[k][0],neighboures,neighboures_distance]
 
-kdistanceres= partition.map(lambda x:kdistance(x,5)).zipWithIndex().collect()
+kdistanceres= partition.map(lambda x:kdistance(x,k)).zipWithIndex().collect()
 
+def add_kdiatanceofO(kdistanceres):
+  for i in range(len(kdistanceres)):
+    kdiatanceofO = []
+    for j in kdistanceres[i][0][1]:
+      kdiatanceofO.append(kdistanceres[j][0][0])
+    kdistanceres[i][0].append(kdiatanceofO)
+
+add_kdiatanceofO(kdistanceres)
+
+def reach_distance(d1,d2):
+  return max(d1,d2)
+
+def lrd(entry,k):
+  sum_reach_distance = 0
+  for i in range(k):
+    sum_reach_distance += reach_distance(entry[0][2][i], entry[0][3][i])
+  return ([k/sum_reach_distance,entry[0][1] ], entry[1])
+
+lrd_rdd = kdistanceres_rdd.map(lambda x:lrd(x,k))
+lrd = lrd_rdd.collect()
+
+def add_lrdOfO(lrd):
+  for i in range(len(lrd)):
+    sum_lrdOfO = 0
+    for j in lrd[i][0][1]:
+      sum_lrdOfO += lrd[j][0][0]
+    lrd[i][0].append(sum_lrdOfO)
+add_lrdOfO(lrd)
+
+
+lrd_rdd = sc.parallelize(lrd)
+def lof(entry,k):
+  lof = entry[0][2]/k/entry[0][0]
+  return [lof,entry[1]]
+lrd = lrd_rdd.map(lambda x:lof(x,k)).collect()
 
 def n_outlier(entry,n):
-  entry = sorted(entry, key=lambda x: x[0][0] ,reverse = True)
+  entry = sorted(entry, key=lambda x: x[0] ,reverse = True)
   return entry[0:n]
-outlier = n_outlier(kdistanceres,10)
-outlier
-
-
-
-
-
-
-
+outlier = n_outlier(lrd,10)
