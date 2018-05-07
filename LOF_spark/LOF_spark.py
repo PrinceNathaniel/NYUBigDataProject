@@ -2,6 +2,7 @@ from csv import reader
 import sys
 import numpy as np
 from pyspark import SparkContext
+from pyspark.sql import SparkSession
 from csv import reader
 from operator import add
 import pandas as pd
@@ -11,10 +12,12 @@ from pyspark.sql.types import BooleanType
 from pyspark.sql.functions import udf,col,when
 from pyspark.sql.types import IntegerType,StringType
 from pyspark.sql.functions import isnan
-from pyspark.sql.functions import broadcast
-display(dbutils.fs.ls("/FileStore/tables/"))
 
-data = sc.textFile("/FileStore/tables/5c5x_3qz9-5a564.tsv")
+
+
+sc = SparkContext()
+spark = SparkSession(sc)
+data = sc.textFile(sys.argv[1],1)
 data = data.mapPartitions(lambda x: reader(x, delimiter='\t'))
 data.collect()
 header = data.first() 
@@ -62,7 +65,7 @@ for i in range(len(header)):
 
 df = df.replace('', '0')
 lines = df.rdd.map(list).zipWithIndex()
-lines = lines.map(lambda (key, index): (index,key))
+lines = lines.map(lambda x: (x[1],x[0]))
 
 n_rows=len(lines.collect())
 n_element=len(lines.first())
