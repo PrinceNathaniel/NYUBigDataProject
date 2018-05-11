@@ -1,4 +1,4 @@
-rom csv import reader
+from csv import reader
 import sys
 import numpy as np
 import pandas as pd
