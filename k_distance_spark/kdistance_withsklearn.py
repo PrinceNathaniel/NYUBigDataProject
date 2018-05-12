@@ -80,3 +80,4 @@ def n_outlier(entry,n):
   entry = sorted(entry, key=lambda x: x[0][0] ,reverse = True)
   return entry[0:n]
 outlier = n_outlier(kdistanceres,10)
+outlier
